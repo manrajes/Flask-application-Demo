@@ -59,6 +59,7 @@ jobs:
           --set global.imageRegistry=://microsoft.com \
           --set auth.postgresPassword="SuperSecurePassword123" \
           --set primary.persistence.size=1Gi
+          --set global.security.allowInsecureImages=true
 
     # 8. Deploy the Flask application via standard Kubernetes Manifests
     - name: Deploy Flask App to AKS
