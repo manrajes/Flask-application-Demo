@@ -53,23 +53,16 @@ jobs:
         version: 'v3.14.0'
 
     # 7. Deploy Postgres DB using the stable MCR Mirror configuration
+        # 7. Deploy Postgres DB with explicitly mapped mirror repository tracks
     - name: Deploy PostgreSQL via Helm
       run: |
-        # Generate a temporary config file on the runner
-        cat <<EOF > postgres-values.yaml
-        global:
-          imageRegistry: mcr.microsoft.com
-          security:
-            allowInsecureImages: true
-        auth:
-          postgresPassword: "SuperSecurePassword123"
-        primary:
-          persistence:
-            size: 1Gi
-        EOF
-
-        # Run helm install pointing directly to the generated values file
-        helm upgrade --install my-postgres oci://registry-1.docker.io/bitnamicharts/postgresql -f postgres-values.yaml
+        helm upgrade --install my-postgres oci://registry-1.docker.io/bitnamicharts/postgresql \
+          --set global.imageRegistry=mcr.microsoft.com \
+          --set image.repository=oss/bitnami/postgresql \
+          --set volumePermissions.image.repository=oss/bitnami/os-shell \
+          --set auth.postgresPassword="SuperSecurePassword123" \
+          --set primary.persistence.size=1Gi \
+          --set "global.security.allowInsecureImages=true"
 
     # 8. Deploy the Flask application via standard Kubernetes Manifests
     - name: Deploy Flask App to AKS
