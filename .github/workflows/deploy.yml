@@ -54,21 +54,48 @@ jobs:
 
     # 7. Deploy Postgres DB using the stable MCR Mirror configuration
         # 7. Deploy Postgres DB with explicitly mapped mirror repository tracks
-    - name: Deploy PostgreSQL via Helm
+        # 7 & 8. Deploy Postgres DB and Flask Application simultaneously using pure Manifests
+    - name: Deploy Infrastructure and Application to AKS
       run: |
-        helm upgrade --install my-postgres oci://registry-1.docker.io/bitnamicharts/postgresql \
-          --set global.imageRegistry=mcr.microsoft.com \
-          --set image.repository=oss/bitnami/postgresql \
-          --set volumePermissions.image.repository=oss/bitnami/os-shell \
-          --set auth.postgresPassword="SuperSecurePassword123" \
-          --set primary.persistence.size=1Gi \
-          --set "global.security.allowInsecureImages=true"
-
-    # 8. Deploy the Flask application via standard Kubernetes Manifests
-    - name: Deploy Flask App to AKS
-      run: |
-        # Create a dynamic manifest parsing the unique commit SHA image tag
         cat <<EOF | kubectl apply -f -
+        apiVersion: apps/v1
+        kind: StatefulSet
+        metadata:
+          name: my-postgres
+        spec:
+          serviceName: "my-postgres"
+          replicas: 1
+          selector:
+            matchLabels:
+              app: postgres
+          template:
+            metadata:
+              labels:
+                app: postgres
+            spec:
+              containers:
+              - name: postgres
+                image: postgres:15-alpine
+                ports:
+                - containerPort: 5432
+                env:
+                - name: POSTGRES_DB
+                  value: "postgres"
+                - name: POSTGRES_USER
+                  value: "postgres"
+                - name: POSTGRES_PASSWORD
+                  value: "SuperSecurePassword123"
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: my-postgres-postgresql
+        spec:
+          ports:
+          - port: 5432
+          selector:
+            app: postgres
+        ---
         apiVersion: apps/v1
         kind: Deployment
         metadata:
