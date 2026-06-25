@@ -131,6 +131,7 @@ jobs:
           name: flask-app-service
         spec:
           type: LoadBalancer
+          loadBalancerIP: 13.86.39.129
           ports:
           - port: 80
             targetPort: 5000
